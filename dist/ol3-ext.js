@@ -40,7 +40,7 @@ ol.control.LayerSwitcher = function(opt_options)
 	this.hasextent = options.extent || options.onextent;
 	this.hastrash = options.trash;
 	this.reordering = (options.reordering!==false);
-	this.onListDrawn = options.onListDrawn || function(){};
+	this.onedit = (typeof (options.onedit) == "function" ? options.onedit: null);
 
 	var element;
 	if (options.target) 
@@ -114,7 +114,8 @@ ol.control.LayerSwitcher.prototype.setMap = function(map)
 	this.drawPanel();
 	
 	if (this.map_)
-	{	this.map_.getLayerGroup().un('change', this.drawPanel, this);
+	{
+	    this.map_.getLayerGroup().un('change', this.drawPanel, this);
 		this.map_.un('moveend', this.viewChange, this);
 		this.map_.un('change:size', this.overflow, this);
 		// console.log("remove");
@@ -485,7 +486,13 @@ ol.control.LayerSwitcher.prototype.drawList = function(ul, collection)
 	function onInfo(e) 
 	{	e.stopPropagation();
 		e.preventDefault(); 
-		self.oninfo($(this).closest('li').data("layer")); 
+		self.oninfo($(this).closest('li').data("layer"));
+	};
+
+	function onEdit(e)
+	{	e.stopPropagation();
+		e.preventDefault();
+		self.onedit($(this).closest('li').data("layer"), this);
 	};
 	function zoomExtent(e) 
 	{	e.stopPropagation();
@@ -569,6 +576,12 @@ ol.control.LayerSwitcher.prototype.drawList = function(ul, collection)
 					.attr("title", this.tip.info)
 					.appendTo(layer_buttons);
 		}
+		if (this.onedit)
+		{	$("<div>").addClass("layerEdit")
+					.on ('click', onEdit)
+					.attr("title","edit layer")
+					.appendTo(layer_buttons);
+		}
 		// Layer remove
 		if (this.hastrash && !layer.get("noSwitcherDelete"))
 		{	$("<div>").addClass("layerTrash")
@@ -617,11 +630,18 @@ ol.control.LayerSwitcher.prototype.drawList = function(ul, collection)
 			{	this.drawList ($("<ul>").appendTo(li), layer.getLayers());
 			}
 		}
+
+        var $editBtns = $('.layerEdit');
+        $editBtns.each(function () {
+            var layer = $(this).parents('li').data('layer');
+            if (!(layer instanceof ol.layer.Vector)) {
+                $(this).remove();
+            }
+        });
 	}
 
 	if (ul==this.panel_) this.overflow();
 
-    this.onListDrawn();
 };
 
 /** Handle progress bar for a layer
