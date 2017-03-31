@@ -32,6 +32,7 @@ ol.control.LayerSwitcher = function(opt_options)
 	this.hasextent = options.extent || options.onextent;
 	this.hastrash = options.trash;
 	this.reordering = (options.reordering!==false);
+	this.onListDrawn = options.onListDrawn || function(){};
 
 	var element;
 	if (options.target) 
@@ -611,6 +612,8 @@ ol.control.LayerSwitcher.prototype.drawList = function(ul, collection)
 	}
 
 	if (ul==this.panel_) this.overflow();
+
+    this.onListDrawn();
 };
 
 /** Handle progress bar for a layer
